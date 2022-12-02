@@ -55,7 +55,20 @@
        (make-list 1000 (hasheq 'name "Bogdan" 'age 30)))
      (for* ([compression (in-list '(none deflate))]
             [block-size (in-list '(1 128 1024 10240 102400))])
-       (check-roundtrip example-schema lst compression block-size)))))
+       (check-roundtrip example-schema lst compression block-size)))
+
+   ;; The following examples were taken from:
+   ;;   https://github.com/linkedin/goavro/tree/8eb9f0e2d756cea165f593f80c6780f4b0b4dbb6/fixtures
+   (test-suite
+    "goavro-fixtures"
+
+    (check-equal? (length (read-container-file (build-path examples "quickstop-deflate.avro"))) 6001)
+    (check-equal? (length (read-container-file (build-path examples "quickstop-null.avro"))) 6001)
+    #;(read-container-file (build-path examples "first-block-count-not-greater-than-0.avro"))
+    #;(read-container-file (build-path examples "second-block-count-0.avro"))
+    (check-exn
+     #rx"invalid sync block"
+     (λ () (read-container-file (build-path examples "sync-market-mismatch.avro")))))))
 
 (module+ test
   (require rackunit/text-ui)

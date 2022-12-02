@@ -81,7 +81,7 @@
           (ref-name e))
         (values full-name (fixed-coder (ref e 'size)))]
        [else
-        (lookup-type type)])]))
+        (values #f (lookup-type type))])]))
 
 (define current-type-namespace
   (make-parameter #f))
