@@ -64,12 +64,15 @@
 (define-coder null-coder ()
   #:singleton
   #:read (λ (_ _in) 'null)
-  #:write void)
+  #:write (λ (_ _v _out) 0))
 
 (define-coder bool-coder ()
   #:singleton
-  #:read (λ (_ in) (= (read-byte in) 1))
-  #:write (λ (_ v out) (write-byte (if v 1 0) out)))
+  #:read (λ (_ in)
+           (= (read-byte in) 1))
+  #:write (λ (_ v out)
+            (begin0 1
+              (write-byte (if v 1 0) out))))
 
 (define-coder int-coder ()
   #:singleton
@@ -79,7 +82,7 @@
             (when (or (> v #x7FFFFFFF)
                       (< v #x-80000000))
               (error 'int-coder "value must be in the range [-0x80000000, 0x7FFFFFFF], got: ~s" v))
-            (void (write-varint v out))))
+            (write-varint v out)))
 
 (define-coder long-coder ()
   #:singleton
@@ -89,17 +92,17 @@
             (when (or (> v #x7FFFFFFFFFFFFFFF)
                       (< v #x-8000000000000000))
               (error 'int-coder "value must be in the range [-2^63, 2^63), got: ~s" v))
-            (void (write-varint v out))))
+            (write-varint v out)))
 
 (define-coder float-coder ()
   #:singleton
   #:read (λ (_ in) (floating-point-bytes->real (expect-bytes 'coder-read "float" 4 in) #f))
-  #:write (λ (_ v out) (void (write-bytes (real->floating-point-bytes v 4 #f) out))))
+  #:write (λ (_ v out) (write-bytes (real->floating-point-bytes v 4 #f) out)))
 
 (define-coder double-coder ()
   #:singleton
   #:read (λ (_ in) (floating-point-bytes->real (expect-bytes 'coder-read "double" 8 in) #f))
-  #:write (λ (_ v out) (void (write-bytes (real->floating-point-bytes v 8 #f) out))))
+  #:write (λ (_ v out) (write-bytes (real->floating-point-bytes v 8 #f) out)))
 
 (define-coder bytes-coder ()
   #:singleton
@@ -107,8 +110,8 @@
            (define len (coder-read long-coder in))
            (expect-bytes 'coder-read "bytes" len in))
   #:write (λ (_ v out)
-            (coder-write long-coder (bytes-length v) out)
-            (void (write-bytes v out))))
+            (+ (coder-write long-coder (bytes-length v) out)
+               (write-bytes v out))))
 
 (define-coder string-coder ()
   #:singleton
@@ -123,7 +126,7 @@
              (values name (coder-read* coder in))))
   #:write (λ (r v out)
             (match-define (record-coder fields) r)
-            (for ([fld (in-list fields)])
+            (for/sum ([fld (in-list fields)])
               (match-define (record-field name coder) fld)
               (coder-write* coder (hash-ref v name) out))))
 
@@ -164,10 +167,10 @@
   #:write (λ (a v out)
             (match-define (array-coder entry-coder) a)
             (define len (sequence-length v))
-            (coder-write long-coder len out)
-            (for ([e (in-list v)])
-              (coder-write* entry-coder e out))
-            (coder-write long-coder 0 out)))
+            (+ (coder-write long-coder len out)
+               (for/sum ([e (in-list v)])
+                 (coder-write* entry-coder e out))
+               (coder-write long-coder 0 out))))
 
 (define-coder map-coder (value-coder)
   #:read (λ (m in)
@@ -191,12 +194,12 @@
   #:write (λ (m v out)
             (match-define (map-coder value-coder) m)
             (define len (hash-count v))
-            (coder-write long-coder len out)
-            (for ([(k v) (in-hash v)])
-              (define k-str (symbol->string k))
-              (coder-write string-coder k-str out)
-              (coder-write* value-coder v out))
-            (coder-write long-coder 0 out)))
+            (+ (coder-write long-coder len out)
+               (for/sum ([(k v) (in-hash v)])
+                 (define k-str (symbol->string k))
+                 (+ (coder-write string-coder k-str out)
+                    (coder-write* value-coder v out)))
+               (coder-write long-coder 0 out))))
 
 (define-coder union-coder (alternatives)
   #:read (λ (u in)
@@ -220,8 +223,8 @@
             (define coder
               (alternative-coder
                (vector-ref alternatives alternative-idx)))
-            (coder-write int-coder alternative-idx out)
-            (coder-write* coder value out)))
+            (+ (coder-write int-coder alternative-idx out)
+               (coder-write* coder value out))))
 
 (define-coder fixed-coder (len)
   #:read (λ (f in)
@@ -231,7 +234,7 @@
             (match-define (fixed-coder len) f)
             (unless (= (bytes-length v) len)
               (error 'fixed-coder "expected ~a bytes but found: ~e" len v))
-            (void (write-bytes v out))))
+            (write-bytes v out)))
 
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

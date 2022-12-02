@@ -8,4 +8,4 @@
   [codec? (-> any/c boolean?)]
   [make-codec (-> string? codec?)]
   [codec-read (-> codec? input-port? any/c)]
-  [codec-write (-> codec? any/c output-port? void?)]))
+  [codec-write (-> codec? any/c output-port? exact-nonnegative-integer?)]))

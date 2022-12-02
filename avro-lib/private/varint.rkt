@@ -20,10 +20,14 @@
 (define (read-uvarint [in (current-input-port)])
   (let loop ([s 0])
     (define b (read-byte in))
-    (if (zero? (bitwise-and b #x80))
-        (arithmetic-shift b s)
-        (+ (arithmetic-shift (bitwise-and b #x7F) s)
-           (loop (+ s 7))))))
+    (cond
+      [(eof-object? b)
+       (error 'read-uvarint "unexpected EOF while reading uvarint")]
+      [(zero? (bitwise-and b #x80))
+       (arithmetic-shift b s)]
+      [else
+       (+ (arithmetic-shift (bitwise-and b #x7F) s)
+          (loop (+ s 7)))])))
 
 (define (write-uvarint v [out (current-output-port)])
   (define bs

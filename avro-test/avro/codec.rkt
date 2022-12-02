@@ -8,9 +8,9 @@
     (codec-write c v buf)
     (check-equal? (codec-read c (open-input-bytes (get-output-bytes buf))) v)))
 
-(define avro-suite
+(define codec-suite
   (test-suite
-   "avro"
+   "codec"
 
    (test-case "spec example"
      ;; Example from https://avro.apache.org/docs/1.11.1/specification/
@@ -150,4 +150,4 @@ EOF
 
 (module+ test
   (require rackunit/text-ui)
-  (run-tests avro-suite))
+  (run-tests codec-suite))

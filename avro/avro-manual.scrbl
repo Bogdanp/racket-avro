@@ -34,10 +34,6 @@ Aliasing schemas during read is not currently supported.
 JSON encoding is not currently supported and it is unlikely it will be
 unless someone else is interested in adding support.
 
-@subsection{Object Container Format}
-
-I plan to implement support for the container format shortly.
-
 @subsection{RPC}
 
 I don't plan on supporting the RPC features at the moment.
@@ -117,7 +113,29 @@ type name of the variant and the value.
 
 @defproc[(codec-write [c codec?]
                       [v any/c]
-                      [out output-port?]) void?]{
+                      [out output-port?]) exact-nonnegative-integer?]{
 
-  Writes @racket[v] to @racket[out] according to @racket[c].
+  Writes @racket[v] to @racket[out] according to @racket[c].  Returns
+  the number of bytes written.
+}
+
+@subsection{Object Container Format}
+@defmodule[avro/container]
+
+@defproc[(read-container [in input-port?]) list?]{
+  Reads a list of objects from @racket[in] using the Avro Object
+  Container Format.
+}
+
+@defproc[(write-container [schema string?]
+                          [values list?]
+                          [out output-port?]
+                          [#:block-size block-size exact-positive-integer? (* 100 1024 1024)]
+                          [#:compression compression (or/c 'none 'deflate) 'deflate]) void?]{
+
+  Writes @racket[values] to @racket[out] using the Avro Object
+  Container Format and the given @racket[schema].  The
+  @racket[block-size] argument is a hint that instructs the writer to
+  start new data blocks once the size (before compression) has been
+  exceeded.
 }
