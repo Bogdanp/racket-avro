@@ -97,7 +97,8 @@ type name of the variant and the value.
     (define v
       (hasheq
        'value 1
-       'next (cons "LongList"
+       'next (cons
+              "LongList"
               (hasheq
                'value 2
                'next (cons "null" 'null)))))
