@@ -64,8 +64,8 @@
 
     (check-equal? (length (read-container-file (build-path examples "quickstop-deflate.avro"))) 6001)
     (check-equal? (length (read-container-file (build-path examples "quickstop-null.avro"))) 6001)
-    #;(read-container-file (build-path examples "first-block-count-not-greater-than-0.avro"))
-    #;(read-container-file (build-path examples "second-block-count-0.avro"))
+    (check-equal? (read-container-file (build-path examples "first-block-count-not-greater-than-0.avro")) null)
+    (check-equal? (read-container-file (build-path examples "second-block-count-0.avro")) '(-49))
     (check-exn
      #rx"invalid sync block"
      (λ () (read-container-file (build-path examples "sync-market-mismatch.avro")))))))
