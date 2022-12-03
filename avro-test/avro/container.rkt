@@ -32,7 +32,11 @@
    schema vs buf)
   (define read-vs
     (read-container (open-input-bytes (get-output-bytes buf))))
-  (check-equal? read-vs vs))
+  (with-check-info
+    (['value read-vs]
+     ['expected vs])
+    (unless (equal? read-vs vs)
+      (fail-check))))
 
 (define container-suite
   (test-suite

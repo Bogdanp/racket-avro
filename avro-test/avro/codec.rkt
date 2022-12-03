@@ -6,7 +6,13 @@
 (define-check (check-roundtrip c v)
   (let ([buf (open-output-bytes)])
     (codec-write c v buf)
-    (check-equal? (codec-read c (open-input-bytes (get-output-bytes buf))) v)))
+    (define read-v
+      (codec-read c (open-input-bytes (get-output-bytes buf))))
+    (with-check-info
+      (['value read-v]
+       ['expected v])
+      (unless (equal? read-v v)
+        (fail-check)))))
 
 (define codec-suite
   (test-suite
