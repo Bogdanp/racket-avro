@@ -29,9 +29,13 @@ EOF
 
      (define v
        (hasheq 'value 1
-               'next (cons "LongList"
-                           (hasheq 'value 2
-                                   'next (cons "null" 'null)))))
+               'next (hasheq
+                      'type "LongList"
+                      'value (hasheq
+                              'value 2
+                              'next (hasheq
+                                     'type "null"
+                                     'value 'null)))))
      (check-roundtrip c v))
 
    (test-suite

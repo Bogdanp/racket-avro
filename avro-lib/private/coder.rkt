@@ -208,18 +208,19 @@
              (coder-read int-coder in))
            (unless (< alternative-idx (vector-length alternatives))
              (error 'union-coder "alternative index exceeds length of alts: ~s" alternative-idx))
-           (match-define (alternative altname coder)
+           (match-define (alternative name coder)
              (vector-ref alternatives alternative-idx))
-           (cons altname (coder-read* coder in)))
+           (hasheq 'type name 'value (coder-read* coder in)))
   #:write (λ (u v out)
             (match-define (union-coder alternatives) u)
-            (match-define (cons typename value) v)
+            (define type (hash-ref v 'type))
+            (define value (hash-ref v 'value))
             (define alternative-idx
               (for/first ([(alt idx) (in-indexed (in-vector alternatives))]
-                          #:when (equal? (alternative-name alt) typename))
+                          #:when (equal? (alternative-name alt) type))
                 idx))
             (unless alternative-idx
-              (error 'union-coder "no alternative found for type: ~s" typename))
+              (error 'union-coder "no alternative found for type: ~s" type))
             (define coder
               (alternative-coder
                (vector-ref alternatives alternative-idx)))

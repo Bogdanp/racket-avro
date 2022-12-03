@@ -62,8 +62,9 @@ following table:
 
 Records are represented by @racket[hasheq] hashes with symbols for
 keys.  Enums are represented by the symbols that make up their
-variants.  Unions are represented by a pair of the fully-qualified
-type name of the variant and the value.
+variants.  Unions are represented by @racket[hasheq] hashes with two
+keys: @racket['type] representing the fully-qualified name of the
+variant and @racket['value], containing the value.
 
 @defproc[(codec? [v any/c]) boolean?]{
   Returns @racket[#t] when @racket[v] is a @tech{codec}.
@@ -93,11 +94,13 @@ type name of the variant and the value.
     (define v
       (hasheq
        'value 1
-       'next (cons
-              "LongList"
-              (hasheq
-               'value 2
-               'next (cons "null" 'null)))))
+       'next (hasheq
+              'type "LongList"
+              'value (hasheq
+                      'value 2
+                      'next (hasheq
+                             'type "null"
+                             'value 'null)))))
 
     (define buf (open-output-bytes))
     (codec-write c v buf)
