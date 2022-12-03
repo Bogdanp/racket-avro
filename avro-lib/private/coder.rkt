@@ -4,7 +4,6 @@
                      syntax/parse)
          racket/generic
          racket/match
-         racket/sequence
          "varint.rkt")
 
 (provide
@@ -166,7 +165,7 @@
                 (loop (cons (read-block len) blocks))])))
   #:write (λ (a v out)
             (match-define (array-coder entry-coder) a)
-            (define len (sequence-length v))
+            (define len (length v))
             (+ (coder-write long-coder len out)
                (for/sum ([e (in-list v)])
                  (coder-write* entry-coder e out))
