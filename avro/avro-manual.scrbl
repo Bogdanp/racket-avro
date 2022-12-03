@@ -12,8 +12,7 @@
   (apply link "https://avro.apache.org/docs/1.11.1/specification/" pre-content))
 
 This package implements support for decoding and encoding data
-specified using the @avro-link{Apache Avro} protocol.  It is a work in
-progress and breaking changes are to be expected.
+specified using the @avro-link{Apache Avro} protocol.
 
 @section{Schema Evolution}
 
@@ -24,10 +23,12 @@ I agree with the authors of the @tt{goavro} package that Avro schema
 evolution seems @broken-link{broken}.  As such, this package doesn't
 attempt to support field @tt{default}s.
 
+
 @section{Missing Features}
 @subsection{Aliases}
 
-Aliasing schemas during read is not currently supported.
+Aliasing schemas during read is not currently supported, but I may add
+support if there is interest.
 
 @subsection{JSON Encoding}
 
@@ -37,6 +38,7 @@ unless someone else is interested in adding support.
 @subsection{RPC}
 
 I don't plan on supporting the RPC features at the moment.
+
 
 @section{Reference}
 @defmodule[avro]
