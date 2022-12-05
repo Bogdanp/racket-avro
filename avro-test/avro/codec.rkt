@@ -125,7 +125,7 @@ EOF
   "symbols": ["foo", "bar"]
 }
 EOF
-)])
+                          )])
        (check-roundtrip c 'foo)
        (check-roundtrip c 'bar)))
 
@@ -155,7 +155,7 @@ EOF
   "name": "md5"
 }
 EOF
-)])
+                          )])
        (check-roundtrip c #"1234567890000000")))))
 
 (module+ test
