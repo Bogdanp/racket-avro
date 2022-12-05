@@ -2,7 +2,6 @@
 
 (require json
          racket/format
-         racket/match
          racket/port
          racket/string
          "coder.rkt")
@@ -27,10 +26,10 @@
   (coder-write (codec-coder c) v out))
 
 (define (parse-schema e)
-  (match e
-    [(? string?)
+  (cond
+    [(string? e)
      (values e (lookup-type e))]
-    [(? list?)
+    [(list? e)
      (define the-coder
        (union-coder
         (for/vector ([schema (in-list e)])
@@ -40,7 +39,7 @@
             (error 'parse-schema "unions are not allowed as immediate children of other unions"))
           (alternative name coder))))
      (values #f the-coder)]
-    [(? hash?)
+    [(hash? e)
      (define type
        (ref e 'type))
      (case type
@@ -81,7 +80,9 @@
           (ref-name e))
         (values full-name (fixed-coder (ref e 'size)))]
        [else
-        (values #f (lookup-type type))])]))
+        (values #f (lookup-type type))])]
+    [else
+     (raise-argument-error 'parse-schema "(or/c string? list? hash?)" e)]))
 
 (define current-type-namespace
   (make-parameter #f))
@@ -109,7 +110,7 @@
     [("string") string-coder]
     [else #f]))
 
-(define (ref ht id [default (λ () (error 'ref "required field ~a not found" id))])
+(define (ref ht id [default (λ () (error 'ref "required field not found: ~a" id))])
   (hash-ref ht id default))
 
 (define (ref-name ht)
