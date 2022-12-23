@@ -236,12 +236,12 @@ EOF
           'type (list "null" "string")
           'default (hasheq
                     'type "null"
-                    'value "null")))))
+                    'value 'null)))))
      (check-equal?
       (dec #"" null-union)
       (hasheq
        'type "null"
-       'value "null"))
+       'value 'null))
      (check-equal?
       (dec (enc (hasheq 'type "string" 'value "hello") null-union) null-union)
       (hasheq 'type "string" 'value "hello")))))
