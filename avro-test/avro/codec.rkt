@@ -1,6 +1,8 @@
 #lang racket/base
 
 (require avro
+         json
+         racket/port
          rackunit)
 
 (define-check (check-roundtrip c v)
@@ -49,6 +51,7 @@ EOF
 
     (test-suite
      "null"
+
      (check-roundtrip (make-codec "\"null\"") 'null))
 
     (test-suite
@@ -118,19 +121,21 @@ EOF
        (check-roundtrip c "hello"))))
 
    (test-case "enum"
-     (let ([c (make-codec #<<EOF
+     (define c
+       (make-codec #<<EOF
 {
   "name": "AnEnum",
   "type": "enum",
   "symbols": ["foo", "bar"]
 }
 EOF
-                          )])
-       (check-roundtrip c 'foo)
-       (check-roundtrip c 'bar)))
+                   ))
+     (check-roundtrip c 'foo)
+     (check-roundtrip c 'bar))
 
    (test-case "array"
-     (let ([c (make-codec #<<EOF
+     (define c
+       (make-codec #<<EOF
 {
   "type": "array",
   "items": {
@@ -143,20 +148,103 @@ EOF
   }
 }
 EOF
-                          )])
-       (check-roundtrip c null)
-       (check-roundtrip c (list (hasheq 'name "Bogdan" 'age 30)))))
+                   ))
+     (check-roundtrip c null)
+     (check-roundtrip c (list (hasheq 'name "Bogdan" 'age 30))))
 
    (test-case "fixed"
-     (let ([c (make-codec #<<EOF
+     (define c
+       (make-codec #<<EOF
 {
   "type": "fixed",
   "size": 16,
   "name": "md5"
 }
 EOF
-                          )])
-       (check-roundtrip c #"1234567890000000")))))
+                   ))
+     (check-roundtrip c #"1234567890000000"))
+
+   (test-case "defaults"
+     (define v0
+       (make-codec
+        (jsexpr->string
+         (hasheq
+          'name "Person"
+          'type "record"
+          'fields (list
+                   (hasheq 'type "string" 'name "Name")
+                   (hasheq 'type "int" 'name "Age"))))))
+     (define v1
+       (make-codec
+        (jsexpr->string
+         (hasheq
+          'name "Person"
+          'type "record"
+          'fields (list
+                   (hasheq 'type "string" 'name "Name")
+                   (hasheq 'type "int" 'name "Age")
+                   (hasheq 'type "string" 'name "University" 'default "")
+                   (hasheq 'type "boolean" 'name "HasPets" 'default #f))))))
+
+     (define (enc v [c v0])
+       (call-with-output-bytes
+        (lambda (out)
+          (codec-write c v out))))
+     (define (dec bs [c v1])
+       (call-with-input-bytes bs
+         (lambda (in)
+           (codec-read c in))))
+
+     (check-equal?
+      (dec (enc (hasheq 'Name "Bogdan Popa" 'Age 30)))
+      (hasheq
+       'Name "Bogdan Popa"
+       'Age 30
+       'University ""
+       'HasPets #f))
+
+     (check-equal?
+      (dec (enc (hasheq 'Name "Bogdan Popa" 'Age 30 'University "" 'HasPets #t) v1))
+      (hasheq
+       'Name "Bogdan Popa"
+       'Age 30
+       'University ""
+       'HasPets #t))
+
+     (check-exn
+      #rx"no value found for key.*University"
+      (lambda ()
+        (enc (hasheq 'Name "Bogdan Popa" 'Age 30) v1)))
+
+     (define optional-string
+       (make-codec
+        (jsexpr->string
+         (hasheq
+          'type "string"
+          'default "missing"))))
+     (check-equal?
+      (dec #"" optional-string)
+      "missing")
+     (check-equal?
+      (dec (enc "hello" optional-string) optional-string)
+      "hello")
+
+     (define null-union
+       (make-codec
+        (jsexpr->string
+         (hasheq
+          'type (list "null" "string")
+          'default (hasheq
+                    'type "null"
+                    'value "null")))))
+     (check-equal?
+      (dec #"" null-union)
+      (hasheq
+       'type "null"
+       'value "null"))
+     (check-equal?
+      (dec (enc (hasheq 'type "string" 'value "hello") null-union) null-union)
+      (hasheq 'type "string" 'value "hello")))))
 
 (module+ test
   (require rackunit/text-ui)

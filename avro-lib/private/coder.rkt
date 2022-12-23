@@ -31,7 +31,8 @@
  array-coder
  map-coder
  union-coder
- fixed-coder)
+ fixed-coder
+ optional-coder)
 
 (define-generics coder
   {coder-read coder in}
@@ -235,6 +236,16 @@
             (unless (= (bytes-length v) len)
               (error 'fixed-coder "expected ~a bytes but found: ~e" len v))
             (write-bytes v out)))
+
+(define-coder optional-coder (c default)
+  #:read (λ (o in)
+           (match-define (optional-coder c default) o)
+           (cond
+             [(eof-object? (peek-byte in)) default]
+             [else (coder-read* c in)]))
+  #:write (λ (o v out)
+            (match-define (optional-coder c _) o)
+            (coder-write* c v out)))
 
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

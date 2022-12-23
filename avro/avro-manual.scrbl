@@ -20,8 +20,9 @@ specified using the @avro-link{Apache Avro} protocol.
    (apply link "https://github.com/linkedin/goavro/blob/8eb9f0e2d756cea165f593f80c6780f4b0b4dbb6/SCHEMA-EVOLUTION.md" pre-content))
 
 I agree with the authors of the @tt{goavro} package that Avro schema
-evolution seems @broken-link{broken}.  As such, this package doesn't
-attempt to support field @tt{default}s.
+evolution seems @broken-link{broken}.  While this package supports
+field @tt{default}s, I would caution against using them.  Instead,
+version your schemas by tagging your data.
 
 
 @section{Missing Features}

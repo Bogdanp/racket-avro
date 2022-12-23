@@ -42,45 +42,53 @@
     [(hash? e)
      (define type
        (ref e 'type))
-     (case type
-       [("record")
-        (define-values (namespace full-name)
-          (ref-name e))
-        (define coder-box (box #f))
-        (parameterize ([current-type-namespace namespace]
-                       [current-types (hash-set (current-types) full-name coder-box)])
-          (define coder
-            (record-coder
-             (for/list ([field-schema (in-list (ref e 'fields))])
-               (define field-name (string->symbol (ref field-schema 'name)))
-               (define-values (_ field-coder)
-                 (parse-schema (ref field-schema 'type)))
-               (record-field field-name field-coder))))
-          (set-box! coder-box coder)
-          (values full-name coder))]
-       [("enum")
-        (define-values (namespace full-name)
-          (ref-name e))
-        (define coder-box (box #f))
-        (parameterize ([current-type-namespace namespace]
-                       [current-types (hash-set (current-types) full-name coder-box)])
-          (define coder (enum-coder (list->vector (map string->symbol (ref e 'symbols)))))
-          (set-box! coder-box coder)
-          (values full-name coder))]
-       [("array")
-        (define-values (_ item-coder)
-          (parse-schema (ref e 'items)))
-        (values #f (array-coder item-coder))]
-       [("map")
-        (define-values (_ value-coder)
-          (parse-schema (ref e 'values)))
-        (values #f (map-coder value-coder))]
-       [("fixed")
-        (define-values (_namespace full-name)
-          (ref-name e))
-        (values full-name (fixed-coder (ref e 'size)))]
-       [else
-        (values #f (lookup-type type))])]
+     (define-values (full-name coder)
+       (case type
+         [("record")
+          (define-values (namespace full-name)
+            (ref-name e))
+          (define coder-box (box #f))
+          (parameterize ([current-type-namespace namespace]
+                         [current-types (hash-set (current-types) full-name coder-box)])
+            (define coder
+              (record-coder
+               (for/list ([field-schema (in-list (ref e 'fields))])
+                 (define field-name (string->symbol (ref field-schema 'name)))
+                 (define-values (_ field-coder)
+                   (parse-schema (ref field-schema 'type)))
+                 (define field-coder*
+                   (if (hash-has-key? field-schema 'default)
+                       (optional-coder field-coder (hash-ref field-schema 'default))
+                       field-coder))
+                 (record-field field-name field-coder*))))
+            (set-box! coder-box coder)
+            (values full-name coder))]
+         [("enum")
+          (define-values (namespace full-name)
+            (ref-name e))
+          (define coder-box (box #f))
+          (parameterize ([current-type-namespace namespace]
+                         [current-types (hash-set (current-types) full-name coder-box)])
+            (define coder (enum-coder (list->vector (map string->symbol (ref e 'symbols)))))
+            (set-box! coder-box coder)
+            (values full-name coder))]
+         [("array")
+          (define-values (_ item-coder)
+            (parse-schema (ref e 'items)))
+          (values #f (array-coder item-coder))]
+         [("map")
+          (define-values (_ value-coder)
+            (parse-schema (ref e 'values)))
+          (values #f (map-coder value-coder))]
+         [("fixed")
+          (define-values (_namespace full-name)
+            (ref-name e))
+          (values full-name (fixed-coder (ref e 'size)))]
+         [else
+          (parse-schema type)]))
+     (if (hash-has-key? e 'default)
+         (values full-name (optional-coder coder (hash-ref e 'default)))
+         (values full-name coder))]
     [else
      (raise-argument-error 'parse-schema "(or/c string? list? hash?)" e)]))
 
