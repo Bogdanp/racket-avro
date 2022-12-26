@@ -91,7 +91,7 @@
   #:write (λ (_ v out)
             (when (or (> v #x7FFFFFFFFFFFFFFF)
                       (< v #x-8000000000000000))
-              (error 'int-coder "value must be in the range [-2^63, 2^63), got: ~s" v))
+              (error 'long-coder "value must be in the range [-2^63, 2^63), got: ~s" v))
             (write-varint v out)))
 
 (define-coder float-coder ()
