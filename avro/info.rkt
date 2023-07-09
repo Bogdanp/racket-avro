@@ -7,4 +7,4 @@
 (define build-deps '("racket-doc"
                      "scribble-lib"))
 (define implies '("avro-lib"))
-(define scribblings '(("avro-manual.scrbl")))
+(define scribblings '(("avro-manual.scrbl" () (parsing-library))))
