@@ -2,7 +2,7 @@
 
 @(require scribble/example
           (for-label racket/base
-                     racket/contract
+                     racket/contract/base
                      avro))
 
 @title{@tt{avro}: Apache Avro}
